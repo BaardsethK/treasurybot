@@ -6,6 +6,7 @@ import pickle
 import json
 
 import os
+
 from os.path import join
 from os.path import dirname
 
@@ -18,6 +19,11 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 BOT_PREFIX = ('!chest ')
 
 JAR = ('discord.pkl')
+if not os.path.isfile('discord.pkl'):
+    open('discord.pkl', 'a').close()
+
+THUMBS_UP = '\N{THUMBS UP SIGN}'
+THUMBS_DOWN = '\N{THUMBS DOWN SIGN}'
 
 description='''Treasurebot for Dungeons & Dragons'''
 bot = commands.Bot(command_prefix = BOT_PREFIX, description=description)
@@ -69,26 +75,56 @@ async def listItems(context):
     msg = f"{json.dumps(pickle_data[server_id]['items'], indent=2, sort_keys=True)}"
     await context.send(msg)
 
+@bot.command(name='Weight', description='Get total weight of inventory items', pass_context=True)
+async def getWeight(context):
+    server_id = context.guild.id
+    pickle_data = await checkPickle(server_id)
+    total_weight = 0
+    for item, data in pickle_data[server_id]['items'].items():
+        total_weight += (next((val for key, val in data.items() if 'weight' in key), None))
+    msg = f"Total weight: {total_weight} lbs"
+    await context.send(msg)
+
 @bot.command(name='addMoney', description='Add money/valuables to party treasury', pass_context=True)
 async def addMoney(context, amount: int, money_type):
     server_id = context.guild.id
-    emoji = '\N{THUMBS UP SIGN}'
     pickle_data = await checkPickle(server_id)
     if money_type in pickle_data[server_id]['money']:
         pickle_data[server_id]['money'][money_type] += amount
     else:
         pickle_data[server_id]['money'][money_type] = amount
     await writeToPickle(pickle_data)
-    await context.message.add_reaction(emoji)
+    await context.message.add_reaction(THUMBS_UP)
 
 @bot.command(name='addItem', desxription='Add item to party inventory', pass_context=True)
-async def addItem(context, name, item_type, desc, weight: int):
+async def addItem(context, name, item_type, desc, weight: float):
     server_id = context.guild.id
-    emoji = '\N{THUMBS UP SIGN}'
     pickle_data = await checkPickle(server_id)
     pickle_data[server_id]['items'][name] = {'type':item_type, 'desc':desc, 'weight(lbs)': weight}
     await writeToPickle(pickle_data)
-    await context.message.add_reaction(emoji)
+    await context.message.add_reaction(THUMBS_UP)
+
+@bot.command(name='removeMoney', description='Remove money/valuables from party treasury', pass_context=True)
+async def removeMoney(context, amount: int, money_type):
+    server_id = context.guild.id
+    pickle_data = await checkPickle(server_id)
+    if money_type in pickle_data[server_id]['money']:
+        pickle_data[server_id]['money'][money_type] -= amount
+        if pickle_data[server_id]['money'][money_type] < 0:
+            pickle_data[server_id]['money'][money_type] = 0
+        await context.message.add_reaction(THUMBS_UP)
+    else:
+        await context.message.add_reaction(THUMBS_DOWN)
+
+@bot.command(name='removeItem', description='Remove item from party inventory', pass_context=True)
+async def removeItem(context, name):
+    server_id = context.guild.id
+    pickle_data = await checkPickle(server_id)
+    if name in pickle_data[server_id]['items']:
+        del pickle_data[server_id]['items'][name]
+        await context.message.add_reaction(THUMBS_UP)
+    else:
+        await context.message.add_reaction(THUMBS_DOWN)
 
 
 @bot.event
