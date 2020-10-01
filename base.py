@@ -56,23 +56,27 @@ async def writeToPickle(pickle_data):
 
 @bot.command(name='listAll', description='List all money and items in party treasury', pass_context=True)
 async def listAll(context):
-    server_id = context.guild.id
-    pickle_data = await checkPickle(server_id)
-    msg = f"{json.dumps(pickle_data[server_id], indent=2, sort_keys=True)}"
-    await context.send(msg)
+    await listMoney(context)
+    await listItems(context)
 
 @bot.command(name='Money', description='List all under money-index', pass_context=True)
 async def listMoney(context):
     server_id = context.guild.id
     pickle_data = await checkPickle(server_id)
-    msg = f"{json.dumps(pickle_data[server_id]['money'], indent=2, sort_keys=True)}"
+    msg = "Money:\n"
+    for key, value in pickle_data[server_id]['money'].items():
+        msg += f"\t{key}: {value}\n"
     await context.send(msg)
 
 @bot.command(name='Items', description='List all under item-index', pass_context=True)
 async def listItems(context):
     server_id = context.guild.id
     pickle_data = await checkPickle(server_id)
-    msg = f"{json.dumps(pickle_data[server_id]['items'], indent=2, sort_keys=True)}"
+    msg = ""
+    for item, data in pickle_data[server_id]['items'].items():
+        msg += f"{item}:\n"
+        for key, val in data.items():
+            msg += f"\t{key}: {val}\n"
     await context.send(msg)
 
 @bot.command(name='Weight', description='Get total weight of inventory items', pass_context=True)
