@@ -105,6 +105,7 @@ async def addItem(context, name, item_type, desc, weight: float):
     server_id = context.guild.id
     pickle_data = await checkPickle(server_id)
     pickle_data[server_id]['items'][name] = {'type':item_type, 'desc':desc, 'weight(lbs)': weight}
+    pickle_data[server_id]['items'] = dict(sorted(pickle_data[server_id]['items'].items()))
     await writeToPickle(pickle_data)
     await context.message.add_reaction(THUMBS_UP)
 
