@@ -89,6 +89,23 @@ async def getWeight(context):
     msg = f"Total weight: {total_weight} lbs"
     await context.send(msg)
 
+@bot.command(name='Split', description='Split money x ways, remainder gets posted afterwards', pass_context=True)
+async def split(context, players: int):
+    server_id = context.guild.id
+    pickle_data = await checkPickle(server_id)
+    split_currency = {}
+    rest_currency = {}
+    for currency, value in pickle_data[server_id]['money'].items():
+        rest_currency[currency] = value % players
+        split_currency[currency] = int((value - rest_currency[currency]) / players)
+    msg = f"Money per player:"
+    for currency, value in split_currency.items():
+        msg += f"\n\t{currency}: {value}"
+    msg += f"\nRemainder:"
+    for currency, value in rest_currency.items():
+        msg += f"\n\t{currency}: {value}"
+    await context.send(msg)
+
 @bot.command(name='addMoney', description='Add money/valuables to party treasury', pass_context=True)
 async def addMoney(context, amount: int, money_type):
     server_id = context.guild.id
